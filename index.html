@@ -1,0 +1,1365 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bookbaskit</title>
+<style>
+/* =============================================
+   COLOUR VARIABLES — change these to retheme
+   ============================================= */
+:root {
+  --bg:                #ffffff;
+  --bg-alt:            #f6f6f8;
+  --bg-hover:          #eeeef2;
+  --bg-header:         #f0f0f3;
+  --bg-input-focus:    #fafafe;
+  --bg-dropdown:       #ffffff;
+  --bg-dropdown-hover: #f0f0f5;
+  --bg-toolbar:        #ffffff;
+  --bg-settings:       #f8f8fa;
+  --border:            #dddde1;
+  --border-light:      #eaeaee;
+  --border-focus:      #8888aa;
+  --text:              #1a1a1e;
+  --text-secondary:    #6e6e7a;
+  --text-placeholder:  #a5a5b0;
+  --accent:            #3366cc;
+  --accent-hover:      #284fa0;
+  --accent-text:       #ffffff;
+  --fave-on:           #c9941a;
+  --fave-off:          #c8c8d0;
+  --status-reading:    #2a6cb6;
+  --status-read:       #2e7d32;
+  --status-tbr:        #7a7a88;
+  --status-dropped:    #a13030;
+  --sync-ok:           #2e7d32;
+  --sync-busy:         #3366cc;
+  --sync-off:          #a5a5b0;
+  --sync-err:          #bb2020;
+  --danger:            #bb2020;
+  --shadow-sm:         0 1px 3px rgba(0,0,0,0.06);
+  --shadow-md:         0 4px 12px rgba(0,0,0,0.10);
+
+  /* TYPOGRAPHY */
+  --font:       -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+  --font-size:  13px;
+  --font-size-sm: 11.5px;
+  --font-size-header: 11px;
+
+  /* SPACING */
+  --row-height: 34px;
+  --cell-pad-x: 10px;
+  --cell-pad-y: 0;
+  --radius:     2px;
+}
+
+/* =============================================
+   RESET & BASE
+   ============================================= */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: var(--font);
+  font-size: var(--font-size);
+  color: var(--text);
+  background: var(--bg);
+  line-height: 1.4;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* =============================================
+   LAYOUT
+   ============================================= */
+.app {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 32px 24px;
+}
+
+/* =============================================
+   TOOLBAR
+   ============================================= */
+.toolbar {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+  align-items: stretch;
+}
+
+.search-wrap {
+  position: relative;
+  flex: 1;
+  max-width: 400px;
+}
+
+.search-input {
+  width: 100%;
+  height: 34px;
+  padding: 0 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  font-family: var(--font);
+  font-size: var(--font-size);
+  color: var(--text);
+  background: var(--bg);
+  outline: none;
+  transition: border-color 0.15s;
+}
+
+.search-input::placeholder { color: var(--text-placeholder); }
+.search-input:focus { border-color: var(--border-focus); }
+
+.search-spinner {
+  display: none;
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 14px;
+  height: 14px;
+  border: 2px solid var(--border);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin 0.6s linear infinite;
+}
+
+.search-spinner.visible { display: block; }
+
+@keyframes spin { to { transform: translateY(-50%) rotate(360deg); } }
+
+.search-results {
+  display: none;
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  margin-top: 4px;
+  background: var(--bg-dropdown);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-md);
+  z-index: 100;
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.search-results.open { display: block; }
+
+.search-result {
+  padding: 8px 10px;
+  cursor: pointer;
+  border-bottom: 1px solid var(--border-light);
+  transition: background 0.1s;
+}
+
+.search-result:last-child { border-bottom: none; }
+.search-result:hover { background: var(--bg-dropdown-hover); }
+
+.search-result-title {
+  font-weight: 500;
+  color: var(--text);
+}
+
+.search-result-meta {
+  font-size: var(--font-size-sm);
+  color: var(--text-secondary);
+  margin-top: 1px;
+}
+
+.search-no-results {
+  padding: 12px 10px;
+  color: var(--text-secondary);
+  font-size: var(--font-size-sm);
+}
+
+.btn-add {
+  height: 34px;
+  padding: 0 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font);
+  font-size: var(--font-size);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.1s, border-color 0.1s;
+}
+
+.btn-add:hover {
+  background: var(--bg-hover);
+  border-color: var(--border-focus);
+}
+
+.toolbar-right {
+  display: flex;
+  align-items: center;
+  margin-left: auto;
+  gap: 10px;
+}
+
+.book-count {
+  font-size: var(--font-size-sm);
+  color: var(--text-secondary);
+  white-space: nowrap;
+  user-select: none;
+}
+
+.sync-status {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: var(--font-size-sm);
+  color: var(--text-secondary);
+  white-space: nowrap;
+  user-select: none;
+}
+
+.sync-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--sync-off);
+}
+
+.sync-dot.ok    { background: var(--sync-ok); }
+.sync-dot.busy  { background: var(--sync-busy); }
+.sync-dot.err   { background: var(--sync-err); }
+
+.btn-gear {
+  width: 34px;
+  height: 34px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg);
+  color: var(--text-secondary);
+  font-size: 16px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.1s, border-color 0.1s;
+  line-height: 1;
+}
+
+.btn-gear:hover {
+  background: var(--bg-hover);
+  border-color: var(--border-focus);
+  color: var(--text);
+}
+
+.btn-gear.active {
+  background: var(--bg-hover);
+  border-color: var(--border-focus);
+}
+
+/* =============================================
+   SETTINGS PANEL
+   ============================================= */
+.settings-panel {
+  display: none;
+  margin-bottom: 16px;
+  padding: 14px 16px;
+  background: var(--bg-settings);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+
+.settings-panel.open { display: block; }
+
+.settings-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.settings-field {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.settings-field label {
+  font-size: var(--font-size-sm);
+  color: var(--text-secondary);
+  white-space: nowrap;
+  min-width: 50px;
+}
+
+.settings-field input {
+  height: 30px;
+  padding: 0 8px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  font-family: var(--font);
+  font-size: var(--font-size-sm);
+  color: var(--text);
+  background: var(--bg);
+  outline: none;
+  transition: border-color 0.15s;
+}
+
+.settings-field input:focus { border-color: var(--border-focus); }
+
+.settings-field input.gist-id { width: 280px; }
+.settings-field input.token   { width: 200px; }
+
+.btn-settings {
+  height: 30px;
+  padding: 0 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  font-family: var(--font);
+  font-size: var(--font-size-sm);
+  cursor: pointer;
+  transition: background 0.1s, border-color 0.1s;
+}
+
+.btn-connect {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-text);
+}
+
+.btn-connect:hover {
+  background: var(--accent-hover);
+  border-color: var(--accent-hover);
+}
+
+.btn-disconnect {
+  background: var(--bg);
+  color: var(--text-secondary);
+}
+
+.btn-disconnect:hover {
+  background: var(--bg-hover);
+  border-color: var(--border-focus);
+}
+
+.settings-msg {
+  font-size: var(--font-size-sm);
+  margin-top: 8px;
+}
+
+.settings-msg.ok  { color: var(--sync-ok); }
+.settings-msg.err { color: var(--sync-err); }
+
+/* =============================================
+   TABLE
+   ============================================= */
+.table-wrap {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+}
+
+col.col-status   { width: 108px; }
+col.col-title    { /* auto */ }
+col.col-author   { width: 180px; }
+col.col-series   { width: 155px; }
+col.col-num      { width: 52px; }
+col.col-date     { width: 115px; }
+col.col-fave     { width: 44px; }
+col.col-notes    { width: 38px; }
+col.col-del      { width: 34px; }
+
+/* HEADER */
+thead th {
+  height: var(--row-height);
+  padding: 0 var(--cell-pad-x);
+  background: var(--bg-header);
+  border-bottom: 1px solid var(--border);
+  border-right: 1px solid var(--border-light);
+  text-align: left;
+  font-size: var(--font-size-header);
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  user-select: none;
+  white-space: nowrap;
+  position: relative;
+}
+
+thead th:last-child { border-right: none; cursor: default; }
+thead th:nth-last-child(2) { cursor: default; } /* notes col */
+thead th:nth-last-child(3) { cursor: default; } /* fave col */
+
+thead th .sort-arrow {
+  font-size: 10px;
+  margin-left: 3px;
+  opacity: 0.4;
+}
+
+thead th.sorted .sort-arrow { opacity: 1; }
+
+thead th:hover:not(:last-child):not(:nth-last-child(2)) {
+  color: var(--text);
+}
+
+/* ROWS */
+tbody tr {
+  border-bottom: 1px solid var(--border-light);
+  transition: background 0.08s;
+}
+
+tbody tr:nth-child(even) { background: var(--bg-alt); }
+tbody tr:hover { background: var(--bg-hover); }
+tbody tr:last-child { border-bottom: none; }
+
+/* CELLS */
+td {
+  height: var(--row-height);
+  padding: 0 var(--cell-pad-x);
+  border-right: 1px solid var(--border-light);
+  vertical-align: middle;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+td:last-child { border-right: none; }
+
+/* Shared input reset for inline editing */
+td input[type="text"],
+td input[type="number"],
+td input[type="date"],
+td select {
+  width: 100%;
+  height: 100%;
+  border: none;
+  background: transparent;
+  font-family: var(--font);
+  font-size: var(--font-size);
+  color: var(--text);
+  padding: 0;
+  outline: none;
+  min-width: 0;
+}
+
+td input[type="text"]:focus,
+td input[type="number"]:focus,
+td input[type="date"]:focus,
+td select:focus {
+  background: var(--bg-input-focus);
+  box-shadow: inset 0 0 0 1.5px var(--accent);
+  border-radius: 1px;
+  padding: 0 4px;
+}
+
+td input[type="number"] {
+  text-align: center;
+  -moz-appearance: textfield;
+}
+
+td input[type="number"]::-webkit-inner-spin-button,
+td input[type="number"]::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+td input[type="date"] {
+  cursor: text;
+}
+
+/* STATUS */
+td.cell-status select {
+  cursor: pointer;
+  font-weight: 500;
+  font-size: var(--font-size-sm);
+}
+
+td.cell-status[data-status="reading"] select  { color: var(--status-reading); }
+td.cell-status[data-status="read"] select     { color: var(--status-read); }
+td.cell-status[data-status="tbr"] select      { color: var(--status-tbr); }
+td.cell-status[data-status="dropped"] select  { color: var(--status-dropped); }
+
+/* FAVE */
+td.cell-fave {
+  text-align: center;
+  padding: 0;
+}
+
+.fave-btn {
+  border: none;
+  background: none;
+  font-size: 16px;
+  cursor: pointer;
+  color: var(--fave-off);
+  line-height: 1;
+  padding: 4px;
+  transition: color 0.12s, transform 0.12s;
+}
+
+.fave-btn:hover { transform: scale(1.15); }
+.fave-btn.on { color: var(--fave-on); }
+
+/* DELETE */
+td.cell-del {
+  text-align: center;
+  padding: 0;
+}
+
+.del-btn {
+  border: none;
+  background: none;
+  font-size: 16px;
+  cursor: pointer;
+  color: transparent;
+  line-height: 1;
+  padding: 4px;
+  transition: color 0.1s;
+}
+
+tr:hover .del-btn { color: var(--fave-off); }
+.del-btn:hover { color: var(--danger); }
+
+/* NOTES */
+td.cell-notes {
+  text-align: center;
+  padding: 0;
+  position: relative;
+}
+
+.notes-btn {
+  border: none;
+  background: none;
+  font-size: 13px;
+  cursor: pointer;
+  color: transparent;
+  line-height: 1;
+  padding: 4px;
+  transition: color 0.12s;
+}
+
+tr:hover .notes-btn { color: var(--fave-off); }
+.notes-btn.has-notes { color: var(--accent); }
+tr:hover .notes-btn.has-notes { color: var(--accent); }
+
+.notes-popover {
+  position: fixed;
+  width: 240px;
+  background: var(--bg-dropdown);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-md);
+  z-index: 200;
+  padding: 6px;
+}
+
+.notes-popover textarea {
+  display: block;
+  width: 100%;
+  min-height: 80px;
+  max-height: 200px;
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius);
+  font-family: var(--font);
+  font-size: var(--font-size);
+  color: var(--text);
+  background: var(--bg);
+  padding: 6px 8px;
+  resize: vertical;
+  outline: none;
+  line-height: 1.45;
+}
+
+.notes-popover textarea::placeholder { color: var(--text-placeholder); }
+.notes-popover textarea:focus { border-color: var(--border-focus); }
+
+/* EMPTY STATE */
+.empty-state {
+  padding: 48px 24px;
+  text-align: center;
+  color: var(--text-placeholder);
+  font-size: var(--font-size);
+}
+
+/* =============================================
+   RESPONSIVE
+   ============================================= */
+@media (max-width: 860px) {
+  .app { padding: 16px 8px; }
+  col.col-author  { width: 140px; }
+  col.col-series  { width: 120px; }
+  col.col-date    { width: 100px; }
+  .settings-field input.gist-id { width: 180px; }
+  .settings-field input.token   { width: 140px; }
+}
+</style>
+</head>
+<body>
+
+<div class="app">
+  <div class="toolbar">
+    <div class="search-wrap">
+      <input type="text" class="search-input" id="search" placeholder="Search Open Library to add a book…" autocomplete="off">
+      <div class="search-spinner" id="spinner"></div>
+      <div class="search-results" id="results"></div>
+    </div>
+    <button class="btn-add" id="btn-add">+ Add manually</button>
+    <div class="toolbar-right">
+      <div class="book-count" id="count"></div>
+      <div class="sync-status" id="sync-status"></div>
+      <button class="btn-gear" id="btn-gear" title="Sync settings">⚙</button>
+    </div>
+  </div>
+
+  <div class="settings-panel" id="settings-panel">
+    <div class="settings-row">
+      <div class="settings-field">
+        <label for="gist-id">Gist ID</label>
+        <input type="text" id="gist-id" class="gist-id" placeholder="e.g. a1b2c3d4e5f6…" spellcheck="false">
+      </div>
+      <div class="settings-field">
+        <label for="token">Token</label>
+        <input type="password" id="token" class="token" placeholder="ghp_…" spellcheck="false">
+      </div>
+      <button class="btn-settings btn-connect" id="btn-connect">Connect</button>
+      <button class="btn-settings btn-disconnect" id="btn-disconnect" style="display:none">Disconnect</button>
+    </div>
+    <div class="settings-msg" id="settings-msg"></div>
+  </div>
+
+  <div class="table-wrap">
+    <table>
+      <colgroup>
+        <col class="col-status">
+        <col class="col-title">
+        <col class="col-author">
+        <col class="col-series">
+        <col class="col-num">
+        <col class="col-date">
+        <col class="col-fave">
+        <col class="col-notes">
+        <col class="col-del">
+      </colgroup>
+      <thead>
+        <tr>
+          <th data-col="status">Status<span class="sort-arrow"></span></th>
+          <th data-col="title">Title<span class="sort-arrow"></span></th>
+          <th data-col="author">Author<span class="sort-arrow"></span></th>
+          <th data-col="series">Series<span class="sort-arrow"></span></th>
+          <th data-col="seriesNum">#<span class="sort-arrow"></span></th>
+          <th data-col="readDate">Read date<span class="sort-arrow"></span></th>
+          <th>&#9733;</th>
+          <th title="Notes">&#9998;</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody id="tbody"></tbody>
+    </table>
+    <div class="empty-state" id="empty">No books yet. Search above or add one manually.</div>
+  </div>
+</div>
+
+<script>
+/* =============================================
+   STATE
+   ============================================= */
+const STORAGE_KEY  = 'bookbaskit_books';
+const CACHE_KEY    = 'bookbaskit_cache';
+const SETTINGS_KEY = 'bookbaskit_settings';
+
+let books = [];
+let sortCol = null;
+let sortDir = 'asc';
+let searchTimeout = null;
+let gistSyncTimeout = null;
+
+const STATUS_LABELS = {
+  reading: 'Reading',
+  read:    'Read',
+  tbr:     'To be read',
+  dropped: 'Dropped'
+};
+
+/* =============================================
+   LOCAL PERSISTENCE
+   ============================================= */
+function loadLocal() {
+  try {
+    books = JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
+  } catch {
+    books = [];
+  }
+  // Migrate from old key name
+  if (!books.length) {
+    try {
+      const old = JSON.parse(localStorage.getItem('booktracker_books'));
+      if (old && old.length) { books = old; saveLocal(); }
+    } catch {}
+  }
+}
+
+function saveLocal() {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(books));
+}
+
+function getCache() {
+  try { return JSON.parse(localStorage.getItem(CACHE_KEY)) || {}; }
+  catch { return {}; }
+}
+
+function setCache(key, data) {
+  const cache = getCache();
+  const keys = Object.keys(cache);
+  if (keys.length > 200) {
+    keys.slice(0, keys.length - 150).forEach(k => delete cache[k]);
+  }
+  cache[key] = { data, ts: Date.now() };
+  localStorage.setItem(CACHE_KEY, JSON.stringify(cache));
+}
+
+function getCached(key) {
+  const cache = getCache();
+  const entry = cache[key];
+  if (entry && (Date.now() - entry.ts < 86400000)) return entry.data;
+  return null;
+}
+
+/* =============================================
+   GIST SYNC
+   ============================================= */
+function loadSettings() {
+  try { return JSON.parse(localStorage.getItem(SETTINGS_KEY)) || null; }
+  catch { return null; }
+}
+
+function saveSettings(settings) {
+  if (settings) {
+    localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
+  } else {
+    localStorage.removeItem(SETTINGS_KEY);
+  }
+}
+
+function setSyncStatus(state, text) {
+  const el = document.getElementById('sync-status');
+  if (!state) { el.innerHTML = ''; return; }
+  el.innerHTML = `<span class="sync-dot ${state}"></span>${text || ''}`;
+}
+
+async function pullFromGist() {
+  const settings = loadSettings();
+  if (!settings) return false;
+
+  setSyncStatus('busy', 'Pulling…');
+  try {
+    const res = await fetch(`https://api.github.com/gists/${settings.gistId}`, {
+      headers: {
+        'Authorization': `token ${settings.token}`,
+        'Accept': 'application/vnd.github.v3+json'
+      }
+    });
+    if (!res.ok) {
+      const msg = res.status === 404 ? 'Gist not found' : res.status === 401 ? 'Bad token' : `Error ${res.status}`;
+      setSyncStatus('err', msg);
+      return false;
+    }
+
+    const gist = await res.json();
+    const file = gist.files && gist.files['books.json'];
+    if (!file) {
+      setSyncStatus('err', 'No books.json in gist');
+      return false;
+    }
+
+    const gistBooks = JSON.parse(file.content);
+    if (Array.isArray(gistBooks)) {
+      books = gistBooks;
+      saveLocal();
+      render();
+    }
+    setSyncStatus('ok', 'Synced');
+    return true;
+  } catch (err) {
+    setSyncStatus('err', 'Offline');
+    return false;
+  }
+}
+
+async function pushToGist() {
+  const settings = loadSettings();
+  if (!settings) return false;
+
+  setSyncStatus('busy', 'Saving…');
+  try {
+    const res = await fetch(`https://api.github.com/gists/${settings.gistId}`, {
+      method: 'PATCH',
+      headers: {
+        'Authorization': `token ${settings.token}`,
+        'Accept': 'application/vnd.github.v3+json',
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        files: {
+          'books.json': {
+            content: JSON.stringify(books, null, 2)
+          }
+        }
+      })
+    });
+
+    if (!res.ok) {
+      setSyncStatus('err', `Save failed (${res.status})`);
+      return false;
+    }
+    setSyncStatus('ok', 'Synced');
+    return true;
+  } catch {
+    setSyncStatus('err', 'Offline');
+    return false;
+  }
+}
+
+function schedulePush() {
+  const settings = loadSettings();
+  if (!settings) return;
+
+  clearTimeout(gistSyncTimeout);
+  gistSyncTimeout = setTimeout(() => pushToGist(), 2000);
+}
+
+/* =============================================
+   COMBINED SAVE (local + gist)
+   ============================================= */
+function save() {
+  saveLocal();
+  schedulePush();
+}
+
+/* =============================================
+   UNIQUE IDS
+   ============================================= */
+function uid() {
+  return Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+}
+
+/* =============================================
+   OPEN LIBRARY SEARCH
+   ============================================= */
+async function searchOpenLibrary(query) {
+  const trimmed = query.trim().toLowerCase();
+  if (trimmed.length < 2) return [];
+
+  const cached = getCached(trimmed);
+  if (cached) return cached;
+
+  const url = `https://openlibrary.org/search.json?q=${encodeURIComponent(trimmed)}&limit=8&fields=title,author_name,first_publish_year,key`;
+  const res = await fetch(url);
+  if (!res.ok) return [];
+
+  const json = await res.json();
+  const results = (json.docs || []).map(d => ({
+    title:  d.title || '',
+    author: (d.author_name || []).join(', '),
+    year:   d.first_publish_year || null
+  }));
+
+  setCache(trimmed, results);
+  return results;
+}
+
+/* =============================================
+   RENDER
+   ============================================= */
+const tbody    = document.getElementById('tbody');
+const emptyDiv = document.getElementById('empty');
+const countDiv = document.getElementById('count');
+
+function render() {
+  closeNotesPopover();
+  const sorted = getSorted();
+  emptyDiv.style.display = sorted.length ? 'none' : 'block';
+
+  const readCount = books.filter(b => b.status === 'read').length;
+  countDiv.textContent = books.length
+    ? `${books.length} book${books.length !== 1 ? 's' : ''}${readCount ? ` · ${readCount} read` : ''}`
+    : '';
+
+  tbody.innerHTML = '';
+
+  sorted.forEach(book => {
+    const tr = document.createElement('tr');
+    tr.dataset.id = book.id;
+
+    // Status
+    const tdStatus = document.createElement('td');
+    tdStatus.className = 'cell-status';
+    tdStatus.dataset.status = book.status;
+    const sel = document.createElement('select');
+    for (const [val, label] of Object.entries(STATUS_LABELS)) {
+      const opt = document.createElement('option');
+      opt.value = val;
+      opt.textContent = label;
+      if (val === book.status) opt.selected = true;
+      sel.appendChild(opt);
+    }
+    sel.addEventListener('change', () => {
+      update(book.id, 'status', sel.value);
+      tdStatus.dataset.status = sel.value;
+      if (sel.value === 'read' && !book.readDate) {
+        const today = new Date().toISOString().slice(0, 10);
+        update(book.id, 'readDate', today);
+        const dateInput = tr.querySelector('.cell-date input');
+        if (dateInput) dateInput.value = today;
+      }
+    });
+    tdStatus.appendChild(sel);
+    tr.appendChild(tdStatus);
+
+    // Title
+    tr.appendChild(makeTextCell(book, 'title', 'cell-title'));
+
+    // Author
+    tr.appendChild(makeTextCell(book, 'author', 'cell-author'));
+
+    // Series
+    tr.appendChild(makeTextCell(book, 'series', 'cell-series'));
+
+    // Series #
+    const tdNum = document.createElement('td');
+    tdNum.className = 'cell-num';
+    const numInput = document.createElement('input');
+    numInput.type = 'number';
+    numInput.min = '0';
+    numInput.value = book.seriesNum || '';
+    numInput.addEventListener('change', () => {
+      update(book.id, 'seriesNum', numInput.value ? Number(numInput.value) : null);
+    });
+    tdNum.appendChild(numInput);
+    tr.appendChild(tdNum);
+
+    // Read date
+    const tdDate = document.createElement('td');
+    tdDate.className = 'cell-date';
+    const dateInput = document.createElement('input');
+    dateInput.type = 'date';
+    dateInput.value = book.readDate || '';
+    dateInput.addEventListener('change', () => {
+      update(book.id, 'readDate', dateInput.value || null);
+    });
+    tdDate.appendChild(dateInput);
+    tr.appendChild(tdDate);
+
+    // Fave
+    const tdFave = document.createElement('td');
+    tdFave.className = 'cell-fave';
+    const faveBtn = document.createElement('button');
+    faveBtn.className = 'fave-btn' + (book.fave ? ' on' : '');
+    faveBtn.textContent = book.fave ? '★' : '☆';
+    faveBtn.addEventListener('click', () => {
+      book.fave = !book.fave;
+      faveBtn.className = 'fave-btn' + (book.fave ? ' on' : '');
+      faveBtn.textContent = book.fave ? '★' : '☆';
+      save();
+    });
+    tdFave.appendChild(faveBtn);
+    tr.appendChild(tdFave);
+
+    // Notes
+    const tdNotes = document.createElement('td');
+    tdNotes.className = 'cell-notes';
+    const notesBtn = document.createElement('button');
+    notesBtn.className = 'notes-btn' + (book.notes ? ' has-notes' : '');
+    notesBtn.textContent = '✎';
+    notesBtn.title = book.notes ? 'View note' : 'Add note';
+    notesBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      showNotesPopover(notesBtn, book.id);
+    });
+    tdNotes.appendChild(notesBtn);
+    tr.appendChild(tdNotes);
+
+    // Delete
+    const tdDel = document.createElement('td');
+    tdDel.className = 'cell-del';
+    const delBtn = document.createElement('button');
+    delBtn.className = 'del-btn';
+    delBtn.textContent = '×';
+    delBtn.title = 'Remove';
+    delBtn.addEventListener('click', () => {
+      books = books.filter(b => b.id !== book.id);
+      save();
+      render();
+    });
+    tdDel.appendChild(delBtn);
+    tr.appendChild(tdDel);
+
+    tbody.appendChild(tr);
+  });
+
+  renderSortHeaders();
+}
+
+function makeTextCell(book, field, cls) {
+  const td = document.createElement('td');
+  td.className = cls;
+  const input = document.createElement('input');
+  input.type = 'text';
+  input.value = book[field] || '';
+  input.placeholder = field === 'title' ? 'Untitled' : '';
+  input.addEventListener('change', () => {
+    update(book.id, field, input.value);
+  });
+  td.appendChild(input);
+  return td;
+}
+
+function update(id, field, value) {
+  const book = books.find(b => b.id === id);
+  if (book) { book[field] = value; save(); }
+}
+
+/* =============================================
+   NOTES POPOVER
+   ============================================= */
+let openPopover = null;
+
+function showNotesPopover(btn, bookId) {
+  if (openPopover && openPopover.bookId === bookId) {
+    closeNotesPopover();
+    return;
+  }
+  closeNotesPopover();
+
+  const book = books.find(b => b.id === bookId);
+  if (!book) return;
+
+  const rect = btn.getBoundingClientRect();
+
+  const popover = document.createElement('div');
+  popover.className = 'notes-popover';
+
+  const textarea = document.createElement('textarea');
+  textarea.value = book.notes || '';
+  textarea.placeholder = 'Add a note…';
+  textarea.addEventListener('input', () => {
+    update(bookId, 'notes', textarea.value);
+    btn.className = 'notes-btn' + (textarea.value ? ' has-notes' : '');
+    btn.title = textarea.value ? 'View note' : 'Add note';
+  });
+  textarea.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') closeNotesPopover();
+  });
+
+  popover.appendChild(textarea);
+  document.body.appendChild(popover);
+
+  const popW = 240;
+  let left = rect.right - popW;
+  let top = rect.bottom + 4;
+  if (left < 8) left = 8;
+  if (top + 100 > window.innerHeight) top = rect.top - 100;
+  popover.style.left = left + 'px';
+  popover.style.top = top + 'px';
+
+  textarea.focus();
+  openPopover = { el: popover, bookId };
+}
+
+function closeNotesPopover() {
+  if (openPopover) {
+    openPopover.el.remove();
+    openPopover = null;
+  }
+}
+
+/* =============================================
+   SORTING
+   ============================================= */
+function getSorted() {
+  if (!sortCol) return [...books];
+
+  return [...books].sort((a, b) => {
+    let va = a[sortCol];
+    let vb = b[sortCol];
+
+    if ((va == null || va === '') && (vb == null || vb === '')) return 0;
+    if (va == null || va === '') return 1;
+    if (vb == null || vb === '') return -1;
+
+    if (sortCol === 'seriesNum') {
+      va = Number(va); vb = Number(vb);
+    } else if (sortCol === 'fave') {
+      va = va ? 1 : 0; vb = vb ? 1 : 0;
+    } else if (typeof va === 'string') {
+      va = va.toLowerCase(); vb = (vb || '').toLowerCase();
+    }
+
+    let cmp = 0;
+    if (va < vb) cmp = -1;
+    else if (va > vb) cmp = 1;
+
+    return sortDir === 'asc' ? cmp : -cmp;
+  });
+}
+
+function toggleSort(col) {
+  if (sortCol === col) {
+    sortDir = sortDir === 'asc' ? 'desc' : 'asc';
+  } else {
+    sortCol = col;
+    sortDir = 'asc';
+  }
+  render();
+}
+
+function renderSortHeaders() {
+  document.querySelectorAll('thead th[data-col]').forEach(th => {
+    const col = th.dataset.col;
+    const arrow = th.querySelector('.sort-arrow');
+    th.classList.toggle('sorted', col === sortCol);
+    arrow.textContent = col === sortCol ? (sortDir === 'asc' ? ' ▲' : ' ▼') : '';
+  });
+}
+
+document.querySelectorAll('thead th[data-col]').forEach(th => {
+  th.addEventListener('click', () => toggleSort(th.dataset.col));
+});
+
+/* =============================================
+   ADD BOOK
+   ============================================= */
+function addBook(data = {}) {
+  const book = {
+    id:        uid(),
+    status:    data.status || 'tbr',
+    title:     data.title || '',
+    author:    data.author || '',
+    series:    data.series || '',
+    seriesNum: data.seriesNum || null,
+    readDate:  data.readDate || null,
+    fave:      data.fave || false,
+    notes:     data.notes || ''
+  };
+  books.unshift(book);
+  save();
+  render();
+
+  requestAnimationFrame(() => {
+    const firstRow = tbody.querySelector('tr');
+    if (firstRow) {
+      const titleInput = firstRow.querySelector('.cell-title input');
+      if (titleInput && !book.title) titleInput.focus();
+    }
+  });
+}
+
+document.getElementById('btn-add').addEventListener('click', () => addBook());
+
+/* =============================================
+   SEARCH UI
+   ============================================= */
+const searchInput   = document.getElementById('search');
+const resultsDiv    = document.getElementById('results');
+const spinnerDiv    = document.getElementById('spinner');
+
+function closeResults() {
+  resultsDiv.classList.remove('open');
+  resultsDiv.innerHTML = '';
+}
+
+searchInput.addEventListener('input', () => {
+  const q = searchInput.value.trim();
+  if (q.length < 2) { closeResults(); return; }
+
+  clearTimeout(searchTimeout);
+  searchTimeout = setTimeout(async () => {
+    spinnerDiv.classList.add('visible');
+    try {
+      const results = await searchOpenLibrary(q);
+      resultsDiv.innerHTML = '';
+
+      if (results.length === 0) {
+        resultsDiv.innerHTML = '<div class="search-no-results">No results found</div>';
+      } else {
+        results.forEach(r => {
+          const div = document.createElement('div');
+          div.className = 'search-result';
+
+          const titleSpan = document.createElement('div');
+          titleSpan.className = 'search-result-title';
+          titleSpan.textContent = r.title;
+          div.appendChild(titleSpan);
+
+          const meta = [];
+          if (r.author) meta.push(r.author);
+          if (r.year) meta.push(r.year);
+          if (meta.length) {
+            const metaSpan = document.createElement('div');
+            metaSpan.className = 'search-result-meta';
+            metaSpan.textContent = meta.join(' · ');
+            div.appendChild(metaSpan);
+          }
+
+          div.addEventListener('click', () => {
+            addBook({ title: r.title, author: r.author });
+            searchInput.value = '';
+            closeResults();
+          });
+
+          resultsDiv.appendChild(div);
+        });
+      }
+
+      resultsDiv.classList.add('open');
+    } catch (err) {
+      resultsDiv.innerHTML = '<div class="search-no-results">Search failed — try again</div>';
+      resultsDiv.classList.add('open');
+    } finally {
+      spinnerDiv.classList.remove('visible');
+    }
+  }, 400);
+});
+
+document.addEventListener('click', (e) => {
+  if (!e.target.closest('.search-wrap')) closeResults();
+  if (openPopover && !e.target.closest('.notes-popover') && !e.target.closest('.notes-btn')) {
+    closeNotesPopover();
+  }
+});
+
+searchInput.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') { searchInput.blur(); closeResults(); }
+});
+
+/* =============================================
+   SETTINGS UI
+   ============================================= */
+const settingsPanel = document.getElementById('settings-panel');
+const gistIdInput   = document.getElementById('gist-id');
+const tokenInput    = document.getElementById('token');
+const btnConnect    = document.getElementById('btn-connect');
+const btnDisconnect = document.getElementById('btn-disconnect');
+const settingsMsg   = document.getElementById('settings-msg');
+const btnGear       = document.getElementById('btn-gear');
+
+btnGear.addEventListener('click', () => {
+  const open = settingsPanel.classList.toggle('open');
+  btnGear.classList.toggle('active', open);
+  if (open) {
+    const settings = loadSettings();
+    if (settings) {
+      gistIdInput.value = settings.gistId || '';
+      tokenInput.value  = settings.token || '';
+      btnConnect.style.display = 'none';
+      btnDisconnect.style.display = '';
+    } else {
+      gistIdInput.value = '';
+      tokenInput.value  = '';
+      btnConnect.style.display = '';
+      btnDisconnect.style.display = 'none';
+    }
+    settingsMsg.textContent = '';
+  }
+});
+
+btnConnect.addEventListener('click', async () => {
+  const gistId = gistIdInput.value.trim();
+  const token  = tokenInput.value.trim();
+
+  if (!gistId || !token) {
+    settingsMsg.textContent = 'Both fields are required.';
+    settingsMsg.className = 'settings-msg err';
+    return;
+  }
+
+  settingsMsg.textContent = 'Connecting…';
+  settingsMsg.className = 'settings-msg';
+
+  // Test the connection
+  try {
+    const res = await fetch(`https://api.github.com/gists/${gistId}`, {
+      headers: {
+        'Authorization': `token ${token}`,
+        'Accept': 'application/vnd.github.v3+json'
+      }
+    });
+
+    if (!res.ok) {
+      const msg = res.status === 404 ? 'Gist not found — check the ID.'
+                : res.status === 401 ? 'Invalid token — check permissions.'
+                : `GitHub returned ${res.status}.`;
+      settingsMsg.textContent = msg;
+      settingsMsg.className = 'settings-msg err';
+      return;
+    }
+
+    const gist = await res.json();
+    const file = gist.files && gist.files['books.json'];
+
+    // Save credentials
+    saveSettings({ gistId, token });
+    btnConnect.style.display = 'none';
+    btnDisconnect.style.display = '';
+
+    if (file) {
+      // Gist has data — pull it
+      const gistBooks = JSON.parse(file.content);
+      if (Array.isArray(gistBooks) && gistBooks.length > 0) {
+        books = gistBooks;
+        saveLocal();
+        render();
+        settingsMsg.textContent = `Connected — loaded ${gistBooks.length} book${gistBooks.length !== 1 ? 's' : ''} from Gist.`;
+        settingsMsg.className = 'settings-msg ok';
+      } else {
+        // Gist is empty, push local data up
+        await pushToGist();
+        settingsMsg.textContent = books.length
+          ? `Connected — pushed ${books.length} book${books.length !== 1 ? 's' : ''} to Gist.`
+          : 'Connected — Gist is ready.';
+        settingsMsg.className = 'settings-msg ok';
+      }
+    } else {
+      // No books.json file yet — push current data
+      await pushToGist();
+      settingsMsg.textContent = 'Connected — created books.json in Gist.';
+      settingsMsg.className = 'settings-msg ok';
+    }
+
+    setSyncStatus('ok', 'Synced');
+
+  } catch (err) {
+    settingsMsg.textContent = 'Network error — check your connection.';
+    settingsMsg.className = 'settings-msg err';
+  }
+});
+
+btnDisconnect.addEventListener('click', () => {
+  saveSettings(null);
+  btnConnect.style.display = '';
+  btnDisconnect.style.display = 'none';
+  gistIdInput.value = '';
+  tokenInput.value  = '';
+  settingsMsg.textContent = 'Disconnected. Data stays in your browser.';
+  settingsMsg.className = 'settings-msg';
+  setSyncStatus(null);
+});
+
+/* =============================================
+   INIT
+   ============================================= */
+loadLocal();
+render();
+
+// If connected, pull latest from Gist
+const initSettings = loadSettings();
+if (initSettings) {
+  // Show connected state in sync indicator
+  setSyncStatus('busy', 'Syncing…');
+  pullFromGist();
+}
+</script>
+</body>
+</html>
