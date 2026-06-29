@@ -1411,30 +1411,7 @@ document.getElementById('btn-pull').addEventListener('click', async () => {
   await pullFromGist();
 });
 
-/* =============================================
-   SAVE ON EXIT (backup)
-   ============================================= */
-window.addEventListener('beforeunload', () => {
-  if (!dirty) return;
-  const settings = loadSettings();
-  if (!settings) return;
 
-  // Use fetch with keepalive to survive page close
-  try {
-    fetch(`https://api.github.com/gists/${settings.gistId}`, {
-      method: 'PATCH',
-      keepalive: true,
-      headers: {
-        'Authorization': `token ${settings.token}`,
-        'Accept': 'application/vnd.github.v3+json',
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        files: { 'books.json': { content: JSON.stringify(books, null, 2) } }
-      })
-    });
-  } catch {}
-});
 
 /* =============================================
    INIT
