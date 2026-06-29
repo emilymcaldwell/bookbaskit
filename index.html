@@ -645,6 +645,7 @@ tr:hover .notes-btn.has-notes { color: var(--accent); }
     <div class="toolbar-right">
       <div class="book-count" id="count"></div>
       <div class="sync-status" id="sync-status"></div>
+      <button class="btn-push" id="btn-pull">Load</button>
       <button class="btn-push" id="btn-push">Save</button>
       <button class="btn-gear" id="btn-gear" title="Sync settings">⚙</button>
     </div>
@@ -874,13 +875,16 @@ function save() {
 }
 
 function updatePushButton() {
-  const btn = document.getElementById('btn-push');
+  const push = document.getElementById('btn-push');
+  const pull = document.getElementById('btn-pull');
   const settings = loadSettings();
   if (settings) {
-    btn.classList.add('visible');
-    btn.classList.toggle('dirty', dirty);
+    push.classList.add('visible');
+    pull.classList.add('visible');
+    push.classList.toggle('dirty', dirty);
   } else {
-    btn.classList.remove('visible');
+    push.classList.remove('visible');
+    pull.classList.remove('visible');
   }
 }
 
@@ -1403,6 +1407,10 @@ document.getElementById('btn-push').addEventListener('click', async () => {
   await pushToGist();
 });
 
+document.getElementById('btn-pull').addEventListener('click', async () => {
+  await pullFromGist();
+});
+
 /* =============================================
    SAVE ON EXIT (backup)
    ============================================= */
@@ -1437,12 +1445,11 @@ render();
 // Clear any browser-autofilled value from the search bar
 searchInput.value = '';
 
-// If connected, pull latest from Gist and show save button
+// If connected, show sync buttons (no auto-pull)
 const initSettings = loadSettings();
 if (initSettings) {
   updatePushButton();
-  setSyncStatus('busy', 'Syncing…');
-  pullFromGist();
+  setSyncStatus('ok', '');
 }
 </script>
 </body>
