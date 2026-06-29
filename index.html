@@ -79,16 +79,21 @@ body {
 .app {
   max-width: 1200px;
   margin: 0 auto;
-  padding: 32px 24px;
+  padding: 24px;
+  padding-top: 0;
 }
 
 /* =============================================
    TOOLBAR
    ============================================= */
 .toolbar {
+  position: sticky;
+  top: 0;
+  background-color: var(--bg);
+  padding: 24px 0;
+  z-index: 420;
   display: flex;
   gap: 8px;
-  margin-bottom: 16px;
   align-items: stretch;
 }
 
@@ -637,7 +642,8 @@ tr:hover .notes-btn.has-notes { color: var(--accent); }
    RESPONSIVE
    ============================================= */
 @media (max-width: 860px) {
-  .app { padding: 16px 8px; }
+  .app { padding: 16px 8px; padding-top: 0;}
+  .toolbar { padding: 12px 0; }
   col.col-author  { width: 100px; }
   col.col-series  { width: 80px; }
   .settings-field input.gist-id { width: 180px; }
