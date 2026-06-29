@@ -53,10 +53,10 @@
   --accent-text:       #ffffff;
   --fave-on:           #f10976;
   --fave-off:          #c8c8d0;
-  --status-reading:    #4e29f0;
-  --status-read:       #14ad59;
+  --status-reading:    #76a5af;
+  --status-read:       #93c47d;
   --status-tbr:        #999999;
-  --status-dropped:    #d11010;
+  --status-dropped:    #e06666;
   --sync-ok:           #2e7d32;
   --sync-busy:         #3366cc;
   --sync-off:          #a5a5b0;
@@ -92,6 +92,8 @@ body {
   line-height: 1.4;
   -webkit-font-smoothing: antialiased;
 }
+
+::selection { background: color-mix(in srgb, var(--accent) 15%, transparent); color: var(--accent); }
 
 /* =============================================
    LAYOUT
@@ -432,11 +434,10 @@ table {
   table-layout: fixed;
 }
 
-col.col-status   { width: 72px; }
-col.col-title    { width: 220px; }
-col.col-author   { width: 160px; }
-col.col-series   { width: 155px; }
-col.col-date     { width: 90px; }
+col.col-status   { width: 80px; }
+col.col-title    { min-width: 220px; }
+col.col-author   { width: 220px; }
+col.col-date     { width: 125px; }
 col.col-fave     { width: 34px; }
 col.col-notes    { width: 34px; }
 col.col-del      { width: 34px; }
@@ -461,8 +462,8 @@ thead th {
 }
 
 thead th:last-child { border-right: none; cursor: default; }
-thead th:nth-last-child(2) { cursor: default; } /* notes col */
-thead th:nth-last-child(3) { cursor: default; } /* fave col */
+thead th:nth-last-child(2) { cursor: default; font-size: 16px; } /* notes col */
+thead th:nth-last-child(3) { cursor: default; font-size: 16px; } /* fave col */
 
 thead th .sort-arrow {
   font-size: 10px;
@@ -538,12 +539,22 @@ td.cell-status select {
   cursor: pointer;
   font-weight: 600;
   font-size: var(--font-size-sm);
+  word-spacing: 5px;
+}
+
+td.cell-status select option::before {
+  content: '⬤';
 }
 
 td.cell-status[data-status="reading"] select  { color: var(--status-reading); }
 td.cell-status[data-status="read"] select     { color: var(--status-read); }
 td.cell-status[data-status="tbr"] select      { color: var(--status-tbr); }
 td.cell-status[data-status="dropped"] select  { color: var(--status-dropped); }
+
+td.cell-status select option[value="reading"] { color: var(--status-reading); }
+td.cell-status select option[value="read"]    { color: var(--status-read); }
+td.cell-status select option[value="tbr"]     { color: var(--status-tbr); }
+td.cell-status select option[value="dropped"] { color: var(--status-dropped); }
 
 /* FAVE */
 td.cell-fave {
@@ -698,7 +709,6 @@ tr:hover .notes-btn.has-notes { color: var(--accent); }
         <col class="col-status">
         <col class="col-title">
         <col class="col-author">
-        <col class="col-series">
         <col class="col-date">
         <col class="col-fave">
         <col class="col-notes">
@@ -709,7 +719,6 @@ tr:hover .notes-btn.has-notes { color: var(--accent); }
           <th data-col="status">Status<span class="sort-arrow"></span></th>
           <th data-col="title">Title<span class="sort-arrow"></span></th>
           <th data-col="author">Author<span class="sort-arrow"></span></th>
-          <th data-col="series">Series<span class="sort-arrow"></span></th>
           <th data-col="readDate">Read date<span class="sort-arrow"></span></th>
           <th><i class="ti ti-heart"></i></th>
           <th title="Notes"><i class="ti ti-note"></i></th>
@@ -737,10 +746,10 @@ let searchTimeout = null;
 let dirty = false;
 
 const STATUS_LABELS = {
-  reading: 'READING',
-  read:    'READ',
-  tbr:     'TBR',
-  dropped: 'DNF/R'
+  reading: '⬤ CR',
+  read:    '⬤ READ',
+  tbr:     '⬤ TBR',
+  dropped: '⬤ DNF'
 };
 
 /* =============================================
@@ -997,9 +1006,6 @@ function render() {
     // Author
     tr.appendChild(makeTextCell(book, 'author', 'cell-author'));
 
-    // Series
-    tr.appendChild(makeTextCell(book, 'series', 'cell-series'));
-
     // Read date
     const tdDate = document.createElement('td');
     tdDate.className = 'cell-date';
@@ -1195,7 +1201,6 @@ function addBook(data = {}) {
     status:    data.status || 'tbr',
     title:     data.title || '',
     author:    data.author || '',
-    series:    data.series || '',
     readDate:  data.readDate || null,
     fave:      data.fave || false,
     notes:     data.notes || ''
