@@ -654,11 +654,11 @@ tr:hover .notes-btn.has-notes { color: var(--accent); }
     <div class="settings-row">
       <div class="settings-field">
         <label for="gist-id">Gist ID</label>
-        <input type="text" id="gist-id" class="gist-id" placeholder="e.g. a1b2c3d4e5f6…" spellcheck="false">
+        <input type="text" id="gist-id" class="gist-id" placeholder="e.g. a1b2c3d4e5f6…" spellcheck="false" autocomplete="username">
       </div>
       <div class="settings-field">
         <label for="token">Token</label>
-        <input type="password" id="token" class="token" placeholder="ghp_…" spellcheck="false">
+        <input type="password" id="token" class="token" placeholder="ghp_…" spellcheck="false" autocomplete="current-password">
       </div>
       <button class="btn-settings btn-connect" id="btn-connect">Connect</button>
       <button class="btn-settings btn-disconnect" id="btn-disconnect" style="display:none">Disconnect</button>
@@ -1433,6 +1433,9 @@ window.addEventListener('beforeunload', () => {
    ============================================= */
 loadLocal();
 render();
+
+// Clear any browser-autofilled value from the search bar
+searchInput.value = '';
 
 // If connected, pull latest from Gist and show save button
 const initSettings = loadSettings();
