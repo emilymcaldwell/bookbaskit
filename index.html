@@ -70,7 +70,7 @@
   --font:       "Switzer", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
   --font-size:  13px;
   --font-size-sm: 11.5px;
-  --font-size-header: 11px;
+  --font-size-header: 12px;
 
   /* SPACING */
   --row-height: 34px;
@@ -432,11 +432,11 @@ table {
   table-layout: fixed;
 }
 
-col.col-status   { width: 80px; }
-col.col-title    { min-width: 200px; }
-col.col-author   { width: 150px; }
+col.col-status   { width: 72px; }
+col.col-title    { width: 220px; }
+col.col-author   { width: 160px; }
 col.col-series   { width: 155px; }
-col.col-date     { width: 130px; }
+col.col-date     { width: 90px; }
 col.col-fave     { width: 34px; }
 col.col-notes    { width: 34px; }
 col.col-del      { width: 34px; }
@@ -513,6 +513,7 @@ td select {
   padding: 0 var(--cell-pad-x);
   outline: none;
   min-width: 0;
+  text-overflow: ellipsis;
 }
 
 td select {
@@ -651,8 +652,6 @@ tr:hover .notes-btn.has-notes { color: var(--accent); }
 @media (max-width: 860px) {
   .app { padding: 16px 8px; padding-top: 0;}
   .toolbar { padding: 12px 0; }
-  col.col-author  { width: 100px; }
-  col.col-series  { width: 80px; }
   .settings-field input.gist-id { width: 180px; }
   .settings-field input.token   { width: 140px; }
 }
