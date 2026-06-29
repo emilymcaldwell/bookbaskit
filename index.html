@@ -37,6 +37,7 @@
   --sync-busy:         #3366cc;
   --sync-off:          #a5a5b0;
   --sync-err:          #bb2020;
+  --sync-unsaved:      #c9941a;
   --danger:            #bb2020;
   --shadow-sm:         0 1px 3px rgba(0,0,0,0.06);
   --shadow-md:         0 4px 12px rgba(0,0,0,0.10);
@@ -226,6 +227,7 @@ body {
 .sync-dot.ok    { background: var(--sync-ok); }
 .sync-dot.busy  { background: var(--sync-busy); }
 .sync-dot.err   { background: var(--sync-err); }
+.sync-dot.unsaved { background: var(--sync-unsaved); }
 
 .btn-gear {
   width: 34px;
@@ -252,6 +254,39 @@ body {
 .btn-gear.active {
   background: var(--bg-hover);
   border-color: var(--border-focus);
+}
+
+.btn-push {
+  display: none;
+  height: 34px;
+  padding: 0 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg);
+  color: var(--text-secondary);
+  font-family: var(--font);
+  font-size: var(--font-size-sm);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.1s, border-color 0.1s, color 0.1s;
+}
+
+.btn-push.visible { display: flex; align-items: center; gap: 4px; }
+
+.btn-push:hover {
+  background: var(--bg-hover);
+  border-color: var(--border-focus);
+  color: var(--text);
+}
+
+.btn-push.dirty {
+  border-color: var(--sync-unsaved);
+  color: var(--sync-unsaved);
+}
+
+.btn-push.dirty:hover {
+  background: var(--bg-hover);
+  border-color: var(--sync-unsaved);
 }
 
 /* =============================================
@@ -610,6 +645,7 @@ tr:hover .notes-btn.has-notes { color: var(--accent); }
     <div class="toolbar-right">
       <div class="book-count" id="count"></div>
       <div class="sync-status" id="sync-status"></div>
+      <button class="btn-push" id="btn-push">Save</button>
       <button class="btn-gear" id="btn-gear" title="Sync settings">⚙</button>
     </div>
   </div>
@@ -674,7 +710,7 @@ let books = [];
 let sortCol = null;
 let sortDir = 'asc';
 let searchTimeout = null;
-let gistSyncTimeout = null;
+let dirty = false;
 
 const STATUS_LABELS = {
   reading: 'Reading',
@@ -814,7 +850,9 @@ async function pushToGist() {
       setSyncStatus('err', `Save failed (${res.status})`);
       return false;
     }
+    dirty = false;
     setSyncStatus('ok', 'Synced');
+    updatePushButton();
     return true;
   } catch {
     setSyncStatus('err', 'Offline');
@@ -822,20 +860,28 @@ async function pushToGist() {
   }
 }
 
-function schedulePush() {
-  const settings = loadSettings();
-  if (!settings) return;
-
-  clearTimeout(gistSyncTimeout);
-  gistSyncTimeout = setTimeout(() => pushToGist(), 2000);
-}
-
 /* =============================================
-   COMBINED SAVE (local + gist)
+   COMBINED SAVE (local immediate, gist manual)
    ============================================= */
 function save() {
   saveLocal();
-  schedulePush();
+  const settings = loadSettings();
+  if (settings && !dirty) {
+    dirty = true;
+    setSyncStatus('unsaved', 'Unsaved');
+    updatePushButton();
+  }
+}
+
+function updatePushButton() {
+  const btn = document.getElementById('btn-push');
+  const settings = loadSettings();
+  if (settings) {
+    btn.classList.add('visible');
+    btn.classList.toggle('dirty', dirty);
+  } else {
+    btn.classList.remove('visible');
+  }
 }
 
 /* =============================================
@@ -1329,6 +1375,7 @@ btnConnect.addEventListener('click', async () => {
     }
 
     setSyncStatus('ok', 'Synced');
+    updatePushButton();
 
   } catch (err) {
     settingsMsg.textContent = 'Network error — check your connection.';
@@ -1338,6 +1385,7 @@ btnConnect.addEventListener('click', async () => {
 
 btnDisconnect.addEventListener('click', () => {
   saveSettings(null);
+  dirty = false;
   btnConnect.style.display = '';
   btnDisconnect.style.display = 'none';
   gistIdInput.value = '';
@@ -1345,6 +1393,39 @@ btnDisconnect.addEventListener('click', () => {
   settingsMsg.textContent = 'Disconnected. Data stays in your browser.';
   settingsMsg.className = 'settings-msg';
   setSyncStatus(null);
+  updatePushButton();
+});
+
+/* =============================================
+   MANUAL PUSH BUTTON
+   ============================================= */
+document.getElementById('btn-push').addEventListener('click', async () => {
+  await pushToGist();
+});
+
+/* =============================================
+   SAVE ON EXIT (backup)
+   ============================================= */
+window.addEventListener('beforeunload', () => {
+  if (!dirty) return;
+  const settings = loadSettings();
+  if (!settings) return;
+
+  // Use fetch with keepalive to survive page close
+  try {
+    fetch(`https://api.github.com/gists/${settings.gistId}`, {
+      method: 'PATCH',
+      keepalive: true,
+      headers: {
+        'Authorization': `token ${settings.token}`,
+        'Accept': 'application/vnd.github.v3+json',
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        files: { 'books.json': { content: JSON.stringify(books, null, 2) } }
+      })
+    });
+  } catch {}
 });
 
 /* =============================================
@@ -1353,10 +1434,10 @@ btnDisconnect.addEventListener('click', () => {
 loadLocal();
 render();
 
-// If connected, pull latest from Gist
+// If connected, pull latest from Gist and show save button
 const initSettings = loadSettings();
 if (initSettings) {
-  // Show connected state in sync indicator
+  updatePushButton();
   setSyncStatus('busy', 'Syncing…');
   pullFromGist();
 }
