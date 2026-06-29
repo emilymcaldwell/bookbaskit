@@ -964,7 +964,7 @@ function render() {
 
   const readCount = books.filter(b => b.status === 'read').length;
   countDiv.textContent = books.length
-    ? `${books.length} book${books.length !== 1 ? 's' : ''}${readCount ? ` · ${readCount} read` : ''}`
+    ? `${books.length} book${books.length !== 1 ? 's' : ''}`
     : '';
 
   tbody.innerHTML = '';
